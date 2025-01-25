@@ -42,6 +42,7 @@ fn main() {
         child = Some(Command::new("sh")
             .arg("-c")
             .arg(command)
+            .process_group(0) // Create new process group
             .spawn()
             .expect("Failed to execute command"));
 
@@ -67,7 +68,12 @@ fn main() {
 
         // Kill the process if it's still running
         if let Some(mut c) = child.take() {
-            let _ = c.kill();
+            // Kill the entire process group
+            unsafe {
+                libc::kill(-c.id() as i32, libc::SIGTERM);
+                std::thread::sleep(std::time::Duration::from_millis(100));
+                libc::kill(-c.id() as i32, libc::SIGKILL);
+            }
             let _ = c.wait();
         }
     }
