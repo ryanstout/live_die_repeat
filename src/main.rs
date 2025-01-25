@@ -33,7 +33,7 @@ fn main() {
     });
 
     // Main loop
-    let mut child: Option<Child> = None;
+    let mut child: Option<Child>;
     loop {
         // Reset the running flag
         running.store(true, Ordering::SeqCst);
