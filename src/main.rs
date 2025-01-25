@@ -5,6 +5,7 @@ use std::env;
 use signal_hook::consts::signal::SIGUSR1;
 use signal_hook::iterator::Signals;
 use std::thread;
+use std::os::unix::process::CommandExt;
 
 fn main() {
     // Get command line arguments, skipping the program name
@@ -70,9 +71,10 @@ fn main() {
         if let Some(mut c) = child.take() {
             // Kill the entire process group
             unsafe {
-                libc::kill(-c.id() as i32, libc::SIGTERM);
+                let pid = c.id() as i32;
+                libc::kill(-pid, libc::SIGTERM);
                 std::thread::sleep(std::time::Duration::from_millis(100));
-                libc::kill(-c.id() as i32, libc::SIGKILL);
+                libc::kill(-pid, libc::SIGKILL);
             }
             let _ = c.wait();
         }
