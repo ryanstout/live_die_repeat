@@ -1,6 +1,6 @@
 # Live Die Repeat
 
-A simple process manager that allows you to restart long-running commands using SIGUSR1 signals.
+A simple command that runs another command and restarts it when it gets a SIGUSR1. Good for automatically restarting servers without hot reloading when you deploy.
 
 ## Description
 
