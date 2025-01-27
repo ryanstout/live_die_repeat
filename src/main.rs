@@ -37,9 +37,8 @@ fn main() {
                     println!("\n👋 Received SIGINT - Shutting down...");
                     // Kill the process group and exit
                     unsafe {
-                        if let Ok(pid) = std::process::id().try_into() {
-                            libc::kill(-(pid as i32), libc::SIGINT);
-                        }
+                        let pid: i32 = std::process::id().try_into().unwrap();
+                        libc::kill(-pid, libc::SIGINT);
                     }
                     std::process::exit(130); // 130 is the conventional exit code for SIGINT
                 }
