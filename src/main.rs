@@ -2,7 +2,7 @@ use std::process::{Child, Command};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::env;
-use signal_hook::consts::signal::SIGUSR1;
+use signal_hook::consts::signal::{SIGUSR1, SIGINT};
 use signal_hook::iterator::Signals;
 use std::thread;
 use std::os::unix::process::CommandExt;
@@ -22,14 +22,29 @@ fn main() {
     let running = Arc::new(AtomicBool::new(true));
     let r = running.clone();
 
-    // Set up SIGUSR1 handler
-    let mut signals = Signals::new(&[SIGUSR1]).expect("Error setting up signal handler");
+    // Set up SIGUSR1 and SIGINT handler
+    let mut signals = Signals::new(&[SIGUSR1, SIGINT]).expect("Error setting up signal handler");
     println!("🎯 Process started with PID: {}", std::process::id());
     thread::spawn(move || {
-        println!("👂 Signal handler thread started, waiting for SIGUSR1...");
-        for _ in signals.forever() {
-            println!("\n🔄 Received SIGUSR1 - Restarting command...");
-            r.store(false, Ordering::SeqCst);
+        println!("👂 Signal handler thread started, waiting for signals...");
+        for sig in signals.forever() {
+            match sig {
+                SIGUSR1 => {
+                    println!("\n🔄 Received SIGUSR1 - Restarting command...");
+                    r.store(false, Ordering::SeqCst);
+                }
+                SIGINT => {
+                    println!("\n👋 Received SIGINT - Shutting down...");
+                    // Kill the process group and exit
+                    unsafe {
+                        if let Ok(pid) = std::process::id().try_into() {
+                            libc::kill(-(pid as i32), libc::SIGINT);
+                        }
+                    }
+                    std::process::exit(130); // 130 is the conventional exit code for SIGINT
+                }
+                _ => unreachable!(),
+            }
         }
     });
 
